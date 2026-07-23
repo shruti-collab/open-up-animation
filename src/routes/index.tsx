@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import shutterDesign from "@/assets/shutter-design.jpg.asset.json";
 import shutterSound from "@/assets/shutter-sound.mp3.asset.json";
+import afterOpenSound from "@/assets/after-open.mp3.asset.json";
 
 
 export const Route = createFileRoute("/")({
@@ -141,6 +142,7 @@ function Index() {
   const [open, setOpen] = useState(false);
   const [reset, setReset] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const afterAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -161,6 +163,10 @@ function Index() {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
+      if (afterAudioRef.current) {
+        afterAudioRef.current.pause();
+        afterAudioRef.current.currentTime = 0;
+      }
       setOpen(false);
       setReset((n) => n + 1);
       return;
@@ -170,8 +176,23 @@ function Index() {
         audioRef.current = new Audio(shutterSound.url);
         audioRef.current.preload = "auto";
       }
+      if (!afterAudioRef.current) {
+        afterAudioRef.current = new Audio(afterOpenSound.url);
+        afterAudioRef.current.preload = "auto";
+      }
       audioRef.current.currentTime = 0;
       void audioRef.current.play();
+      const shutterEl = audioRef.current;
+      const onEnded = () => {
+        try {
+          if (afterAudioRef.current) {
+            afterAudioRef.current.currentTime = 0;
+            void afterAudioRef.current.play();
+          }
+        } catch { /* ignore */ }
+        shutterEl.removeEventListener("ended", onEnded);
+      };
+      shutterEl.addEventListener("ended", onEnded);
     } catch {
       /* ignore */
     }
