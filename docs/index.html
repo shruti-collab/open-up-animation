@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Chanchal Man — Dukaan Shutter</title>
+<meta name="description" content="Pull the shutter up to reveal चंचल मन. A dukaan-style unlock animation with marigold toran and mechanical sound." />
+<meta property="og:title" content="Chanchal Man — Dukaan Shutter" />
+<meta property="og:description" content="A web-based dukaan shutter unlock experience with swaying marigold garland." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+  .stage{position:relative;height:100vh;width:100vw;overflow:hidden;cursor:pointer}
+  .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;-webkit-user-drag:none}
+  .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.55) 100%)}
+  .shutter-housing{position:absolute;left:0;right:0;top:0;height:68px;z-index:20;background:linear-gradient(to bottom,#1a1a1a,#0a0a0a);box-shadow:inset 0 -6px 12px rgba(0,0,0,.7),0 6px 14px rgba(0,0,0,.6);border-bottom:2px solid #000}
+  .shutter-housing::before{content:"";position:absolute;inset:8px 12px;border-radius:8px;background:repeating-linear-gradient(90deg,#3a3a3a 0 2px,#1a1a1a 2px 6px);box-shadow:inset 0 0 12px rgba(0,0,0,.9)}
+  .shutter{position:absolute;left:0;right:0;top:68px;height:calc(100vh - 68px);z-index:10;transform-origin:top;transform:scaleY(1);filter:blur(0);opacity:1;transition:transform 1.7s cubic-bezier(.7,.02,.3,1),filter 1.7s cubic-bezier(.7,.02,.3,1),opacity .3s ease 1.6s;will-change:transform,filter}
+  .shutter.open{transform:scaleY(.001);filter:blur(6px);opacity:0}
+  .shutter-metal{position:relative;height:100%;width:100%;background:
+    radial-gradient(ellipse at 20% 30%,rgba(60,20,10,.35),transparent 60%),
+    radial-gradient(ellipse at 80% 70%,rgba(40,10,5,.3),transparent 60%),
+    repeating-linear-gradient(to bottom,#5a1a12 0,#7a2419 3px,#98342a 6px,#7a2419 9px,#4a140d 12px,#2e0a06 13px,#4a140d 14px);
+    box-shadow:inset 0 40px 60px -20px rgba(0,0,0,.75),inset 0 -30px 40px -10px rgba(0,0,0,.6),inset 12px 0 24px -8px rgba(0,0,0,.5),inset -12px 0 24px -8px rgba(0,0,0,.5)}
+  .shutter-metal::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 60px,rgba(0,0,0,.12) 60px 62px)}
+  .shutter-handle{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);width:140px;height:22px;border-radius:12px;background:linear-gradient(to bottom,#2a2a2a,#0a0a0a);box-shadow:inset 0 2px 3px rgba(255,255,255,.15),inset 0 -2px 3px rgba(0,0,0,.7),0 4px 8px rgba(0,0,0,.6)}
+  .shutter-handle::before,.shutter-handle::after{content:"";position:absolute;top:-6px;width:8px;height:34px;border-radius:3px;background:linear-gradient(to bottom,#444,#111)}
+  .shutter-handle::before{left:10px}.shutter-handle::after{right:10px}
+  .toran{position:absolute;left:0;right:0;top:0;z-index:30;pointer-events:none}
+  .toran svg.rope{display:block;width:100%;height:60px}
+  .toran .row{position:absolute;left:0;right:0;top:8px;display:flex;justify-content:space-between;padding:0 8px}
+  .toran .cell{display:flex;flex-direction:column;align-items:center}
+  .marigold{transform-origin:50% 0;animation:sway 3.2s ease-in-out infinite;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4))}
+  @keyframes sway{0%,100%{transform:rotate(-6deg) translateY(0)}50%{transform:rotate(6deg) translateY(2px)}}
+  .hint{position:absolute;left:0;right:0;bottom:32px;z-index:40;text-align:center;font-size:13px;letter-spacing:.3em;color:rgba(254,243,199,.9);pointer-events:none;transition:opacity .5s;animation:pulse 2s ease-in-out infinite}
+  .hint.hidden{opacity:0}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .close{position:absolute;bottom:24px;right:24px;z-index:40;padding:8px 16px;border-radius:9999px;border:1px solid rgba(254,243,199,.4);background:rgba(0,0,0,.4);color:#fef3c7;font-size:11px;letter-spacing:.2em;backdrop-filter:blur(6px);cursor:pointer;display:none}
+  .close.show{display:block}
+  .close:hover{background:rgba(0,0,0,.6)}
+</style>
+</head>
+<body>
+<div class="stage" id="stage" role="button" tabindex="0" aria-label="Pull shutter up">
+  <img class="bg" src="./assets/shutter-design.jpg" alt="Chanchal Man dukaan design" draggable="false" />
+  <div class="vignette"></div>
+  <div class="shutter-housing"></div>
+  <div class="shutter" id="shutter">
+    <div class="shutter-metal"></div>
+    <div class="shutter-handle"></div>
+  </div>
+  <div class="toran" id="toran"></div>
+  <div class="hint" id="hint">TAP · CLICK · SPACE — खोलिए</div>
+  <button class="close" id="close" type="button">CLOSE SHUTTER</button>
+</div>
+<script>
+(function(){
+  // Build toran (marigold garland) as SVG strings
+  const toran = document.getElementById('toran');
+  const N = 28;
+  const marigold = (size, delay) => `
+    <svg width="${size}" height="${size}" viewBox="0 0 100 100" class="marigold" style="animation-delay:${delay}s">
+      <g transform="translate(50 50)">
+        ${Array.from({length:12}).map((_,i)=>`<ellipse cx="0" cy="-28" rx="12" ry="20" fill="#f59e0b" opacity=".95" transform="rotate(${i*30})"/>`).join('')}
+        ${Array.from({length:10}).map((_,i)=>`<ellipse cx="0" cy="-20" rx="10" ry="16" fill="#ea580c" transform="rotate(${i*36+18})"/>`).join('')}
+        ${Array.from({length:8}).map((_,i)=>`<ellipse cx="0" cy="-12" rx="8" ry="12" fill="#b91c1c" transform="rotate(${i*45})"/>`).join('')}
+        <circle r="6" fill="#7c2d12"/>
+      </g>
+    </svg>`;
+  const leaf = (delay) => `
+    <svg width="26" height="34" viewBox="0 0 40 60" class="marigold" style="animation-delay:${delay}s">
+      <path d="M20 2 C 4 20,4 40,20 58 C 36 40,36 20,20 2 Z" fill="#166534"/>
+      <path d="M20 6 L20 54" stroke="#052e16" stroke-width="1.5"/>
+    </svg>`;
+  let cells = '';
+  for (let i=0;i<N;i++){
+    const isLeaf = i%4===1 || i%4===3;
+    const delay = (i%6)*0.25;
+    const drop = 20 + Math.sin(i*0.8)*18;
+    cells += `<div class="cell" style="transform:translateY(${drop}px)">${isLeaf?leaf(delay):marigold(i%2===0?46:38,delay)}</div>`;
+  }
+  toran.innerHTML = `
+    <svg class="rope" viewBox="0 0 1000 60" preserveAspectRatio="none">
+      <path d="M0 10 Q 250 55 500 20 T 1000 15" stroke="#78350f" stroke-width="3" fill="none"/>
+    </svg>
+    <div class="row">${cells}</div>`;
+
+  const stage = document.getElementById('stage');
+  const shutter = document.getElementById('shutter');
+  const hint = document.getElementById('hint');
+  const closeBtn = document.getElementById('close');
+  const shutterSound = new Audio('./assets/shutter-sound.mp3'); shutterSound.preload='auto';
+  const afterSound = new Audio('./assets/after-open.mp3'); afterSound.preload='auto';
+  let open = false;
+
+  function reset(){
+    open = false;
+    shutter.classList.remove('open');
+    hint.classList.remove('hidden');
+    closeBtn.classList.remove('show');
+    try{shutterSound.pause();shutterSound.currentTime=0;afterSound.pause();afterSound.currentTime=0;}catch(e){}
+  }
+  function trigger(){
+    if(open){ reset(); return; }
+    open = true;
+    shutter.classList.add('open');
+    hint.classList.add('hidden');
+    closeBtn.classList.add('show');
+    try{
+      shutterSound.currentTime = 0;
+      shutterSound.play().catch(()=>{});
+      const onEnd = () => { try{ afterSound.currentTime=0; afterSound.play().catch(()=>{}); }catch(e){} shutterSound.removeEventListener('ended', onEnd); };
+      shutterSound.addEventListener('ended', onEnd);
+    }catch(e){}
+  }
+  stage.addEventListener('click', trigger);
+  closeBtn.addEventListener('click', (e)=>{ e.stopPropagation(); reset(); });
+  window.addEventListener('keydown', (e)=>{
+    if(e.code==='Space'||e.code==='Enter'){ e.preventDefault(); trigger(); }
+  });
+})();
+</script>
+</body>
+</html>
