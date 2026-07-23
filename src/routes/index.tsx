@@ -1,24 +1,292 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import shutterDesign from "@/assets/shutter-design.jpg.asset.json";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Chanchal Man — Dukaan Shutter" },
+      {
+        name: "description",
+        content:
+          "Pull the shutter up to reveal चंचल मन. A dukaan-style unlock animation with marigold toran and mechanical sound.",
+      },
+      { property: "og:title", content: "Chanchal Man — Dukaan Shutter" },
+      {
+        property: "og:description",
+        content:
+          "A web-based dukaan shutter unlock experience with swaying marigold garland.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+// Play a mechanical rolling shutter sound using WebAudio (no assets needed)
+function playShutterSound() {
+  const AC =
+    (window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext);
+  const ctx = new AC();
+  const now = ctx.currentTime;
+  const dur = 1.8;
+
+  // Rolling metal rumble = filtered noise
+  const bufferSize = ctx.sampleRate * dur;
+  const noiseBuf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = noiseBuf.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuf;
+
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(180, now);
+  bp.frequency.exponentialRampToValueAtTime(900, now + dur * 0.7);
+  bp.Q.value = 1.2;
+
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(0.0001, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.55, now + 0.08);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+  noise.connect(bp).connect(noiseGain).connect(ctx.destination);
+  noise.start(now);
+  noise.stop(now + dur);
+
+  // Clank at start
+  const clank = ctx.createOscillator();
+  clank.type = "square";
+  clank.frequency.setValueAtTime(120, now);
+  clank.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+  const clankGain = ctx.createGain();
+  clankGain.gain.setValueAtTime(0.35, now);
+  clankGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+  clank.connect(clankGain).connect(ctx.destination);
+  clank.start(now);
+  clank.stop(now + 0.22);
+
+  // Final thud when it locks open
+  const thud = ctx.createOscillator();
+  thud.type = "sine";
+  thud.frequency.setValueAtTime(90, now + dur - 0.05);
+  thud.frequency.exponentialRampToValueAtTime(35, now + dur + 0.15);
+  const thudGain = ctx.createGain();
+  thudGain.gain.setValueAtTime(0.0001, now + dur - 0.05);
+  thudGain.gain.exponentialRampToValueAtTime(0.5, now + dur);
+  thudGain.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.25);
+  thud.connect(thudGain).connect(ctx.destination);
+  thud.start(now + dur - 0.05);
+  thud.stop(now + dur + 0.3);
+
+  setTimeout(() => ctx.close(), (dur + 0.5) * 1000);
+}
+
+function Marigold({ delay = 0, size = 44 }: { delay?: number; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      className="marigold"
+      style={{ animationDelay: `${delay}s` }}
+    >
+      <g transform="translate(50 50)">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <ellipse
+            key={i}
+            cx="0"
+            cy="-28"
+            rx="12"
+            ry="20"
+            fill="#f59e0b"
+            transform={`rotate(${(i * 360) / 12})`}
+            opacity="0.95"
+          />
+        ))}
+        {Array.from({ length: 10 }).map((_, i) => (
+          <ellipse
+            key={`b${i}`}
+            cx="0"
+            cy="-20"
+            rx="10"
+            ry="16"
+            fill="#ea580c"
+            transform={`rotate(${(i * 360) / 10 + 18})`}
+          />
+        ))}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <ellipse
+            key={`c${i}`}
+            cx="0"
+            cy="-12"
+            rx="8"
+            ry="12"
+            fill="#b91c1c"
+            transform={`rotate(${(i * 360) / 8})`}
+          />
+        ))}
+        <circle r="6" fill="#7c2d12" />
+      </g>
+    </svg>
+  );
+}
+
+function Leaf({ delay = 0 }: { delay?: number }) {
+  return (
+    <svg
+      width="26"
+      height="34"
+      viewBox="0 0 40 60"
+      className="marigold"
+      style={{ animationDelay: `${delay}s` }}
+    >
+      <path
+        d="M20 2 C 4 20, 4 40, 20 58 C 36 40, 36 20, 20 2 Z"
+        fill="#166534"
+      />
+      <path d="M20 6 L20 54" stroke="#052e16" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function Toran() {
+  // Swaying marigold + leaf garland across the top
+  const items = Array.from({ length: 28 });
+  return (
+    <div className="toran-wrap pointer-events-none absolute inset-x-0 top-0 z-30">
+      {/* rope */}
+      <svg
+        viewBox="0 0 1000 60"
+        preserveAspectRatio="none"
+        className="w-full h-[60px]"
+      >
+        <path
+          d="M0 10 Q 250 55 500 20 T 1000 15"
+          stroke="#78350f"
+          strokeWidth="3"
+          fill="none"
+        />
+      </svg>
+      <div className="absolute inset-x-0 top-2 flex justify-between px-2">
+        {items.map((_, i) => {
+          const isLeaf = i % 4 === 1 || i % 4 === 3;
+          const delay = (i % 6) * 0.25;
+          const drop = 20 + Math.sin(i * 0.8) * 18;
+          return (
+            <div
+              key={i}
+              className="flex flex-col items-center"
+              style={{ transform: `translateY(${drop}px)` }}
+            >
+              {isLeaf ? (
+                <Leaf delay={delay} />
+              ) : (
+                <Marigold delay={delay} size={i % 2 === 0 ? 46 : 38} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Index() {
+  const [open, setOpen] = useState(false);
+  const [reset, setReset] = useState(0);
+  const audioReady = useRef(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.code === "Space" || e.code === "Enter") {
+        e.preventDefault();
+        trigger();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function trigger() {
+    if (open) {
+      // reset
+      setOpen(false);
+      setReset((n) => n + 1);
+      return;
+    }
+    try {
+      playShutterSound();
+      audioReady.current = true;
+    } catch {
+      /* ignore */
+    }
+    setOpen(true);
+  }
+
   return (
     <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+      key={reset}
+      className="relative h-screen w-screen overflow-hidden bg-black select-none cursor-pointer"
+      onClick={trigger}
+      role="button"
+      tabIndex={0}
+      aria-label="Pull shutter up"
     >
+      {/* Revealed design behind shutter */}
       <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
+        src={shutterDesign.url}
+        alt="Chanchal Man dukaan design"
+        className="absolute inset-0 h-full w-full object-cover"
+        draggable={false}
       />
+
+      {/* Vignette over the design so it feels like a lit shop */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)]" />
+
+      {/* Shutter housing (top bar with roll) */}
+      <div className="absolute inset-x-0 top-0 z-20 h-[68px] shutter-housing" />
+
+      {/* The rolling shutter itself */}
+      <div
+        className={`shutter absolute inset-x-0 top-[68px] z-10 origin-top ${
+          open ? "shutter-open" : ""
+        }`}
+      >
+        <div className="shutter-metal h-full w-full" />
+        <div className="shutter-handle" />
+      </div>
+
+      {/* Marigold toran (always in front, sways with wind) */}
+      <Toran />
+
+      {/* Hint */}
+      <div
+        className={`pointer-events-none absolute inset-x-0 bottom-8 z-40 text-center text-sm tracking-[0.3em] text-amber-100/90 transition-opacity duration-500 ${
+          open ? "opacity-0" : "opacity-100 animate-pulse"
+        }`}
+      >
+        TAP · CLICK · SPACE — खोलिए
+      </div>
+
+      {open && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(false);
+            setReset((n) => n + 1);
+          }}
+          className="absolute bottom-6 right-6 z-40 rounded-full border border-amber-100/40 bg-black/40 px-4 py-2 text-xs tracking-widest text-amber-100 backdrop-blur hover:bg-black/60"
+        >
+          CLOSE SHUTTER
+        </button>
+      )}
     </div>
   );
 }
