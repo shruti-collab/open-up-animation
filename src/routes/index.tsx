@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Shutter } from "@/components/shutter/Shutter";
+import { Shutter } from "@/components/Shutter";
 
 export const Route = createFileRoute("/")({
   head: () => ({
