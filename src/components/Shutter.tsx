@@ -34,20 +34,29 @@ function Leaf({ delay = 0 }: { delay?: number }) {
 
 /* ---------- Toran (garland) ---------- */
 function Toran() {
-  const items = Array.from({ length: 28 });
+  const [count, setCount] = useState(28);
+  useEffect(() => {
+    const update = () => setCount(window.innerWidth < 640 ? 14 : window.innerWidth < 1024 ? 20 : 28);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const items = Array.from({ length: count });
   return (
     <div className="toran-wrap pointer-events-none absolute inset-x-0 top-0 z-30">
-      <svg viewBox="0 0 1000 60" preserveAspectRatio="none" className="w-full h-[60px]">
+      <svg viewBox="0 0 1000 60" preserveAspectRatio="none" className="w-full h-[40px] sm:h-[60px]">
         <path d="M0 10 Q 250 55 500 20 T 1000 15" stroke="#78350f" strokeWidth="3" fill="none" />
       </svg>
-      <div className="absolute inset-x-0 top-2 flex justify-between px-2">
+      <div className="absolute inset-x-0 top-2 flex justify-between px-1 sm:px-2">
         {items.map((_, i) => {
           const isLeaf = i % 4 === 1 || i % 4 === 3;
           const delay = (i % 6) * 0.25;
-          const drop = 20 + Math.sin(i * 0.8) * 18;
+          const drop = 14 + Math.sin(i * 0.8) * 14;
+          const mSize = i % 2 === 0 ? 34 : 28;
+          const dSize = i % 2 === 0 ? 46 : 38;
           return (
-            <div key={i} className="flex flex-col items-center" style={{ transform: `translateY(${drop}px)` }}>
-              {isLeaf ? <Leaf delay={delay} /> : <Marigold delay={delay} size={i % 2 === 0 ? 46 : 38} />}
+            <div key={i} className="flex flex-col items-center shrink-0" style={{ transform: `translateY(${drop}px)` }}>
+              {isLeaf ? <Leaf delay={delay} /> : <Marigold delay={delay} size={typeof window !== "undefined" && window.innerWidth < 640 ? mSize : dSize} />}
             </div>
           );
         })}
