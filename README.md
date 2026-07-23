@@ -1,29 +1,21 @@
-# Welcome to your Lovable project
+# Shutter — Chanchal Man Dukaan Unlock
 
-This project was built with [Lovable](https://lovable.dev).
+A web-based dukaan shutter unlock animation. Tap / click / press Space to pull the maroon shutter up and reveal the **चंचल मन** poster, complete with a swaying marigold toran and mechanical sounds.
 
-## Build with Lovable
+## Live site
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+🌐 **https://gingeshutter.lovable.app**
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+Custom domain target: **https://shutter.com** (configure in Lovable Project Settings → Domains after verifying domain ownership).
 
-## Development
+## GitHub Pages redirect
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+The static `docs/` build also deploys via GitHub Pages. It is configured to redirect traffic to the canonical domain above.
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+## Project stack
 
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
+- [TanStack Start](https://tanstack.com/start)
+- React + TypeScript
 - Tailwind CSS
+
+Built with [Lovable](https://lovable.dev).

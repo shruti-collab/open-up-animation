@@ -57,6 +57,11 @@
 </div>
 <script>
 (function(){
+  // If loaded from GitHub Pages fallback, redirect to the canonical domain
+  if (location.hostname.endsWith('github.io') || location.hostname.includes('github.io')) {
+    location.replace('https://shutter.com');
+    return;
+  }
   // Build toran (marigold garland) as SVG strings
   const toran = document.getElementById('toran');
   const N = 28;
