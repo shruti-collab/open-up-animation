@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import shutterDesign from "@/assets/shutter-design.jpg.asset.json";
+import shutterSound from "@/assets/shutter-sound.mp3.asset.json";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,68 +26,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// Play a mechanical rolling shutter sound using WebAudio (no assets needed)
-function playShutterSound() {
-  const AC =
-    (window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext);
-  const ctx = new AC();
-  const now = ctx.currentTime;
-  const dur = 1.8;
-
-  // Rolling metal rumble = filtered noise
-  const bufferSize = ctx.sampleRate * dur;
-  const noiseBuf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = noiseBuf.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-  }
-  const noise = ctx.createBufferSource();
-  noise.buffer = noiseBuf;
-
-  const bp = ctx.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.setValueAtTime(180, now);
-  bp.frequency.exponentialRampToValueAtTime(900, now + dur * 0.7);
-  bp.Q.value = 1.2;
-
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.0001, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.55, now + 0.08);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-
-  noise.connect(bp).connect(noiseGain).connect(ctx.destination);
-  noise.start(now);
-  noise.stop(now + dur);
-
-  // Clank at start
-  const clank = ctx.createOscillator();
-  clank.type = "square";
-  clank.frequency.setValueAtTime(120, now);
-  clank.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-  const clankGain = ctx.createGain();
-  clankGain.gain.setValueAtTime(0.35, now);
-  clankGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-  clank.connect(clankGain).connect(ctx.destination);
-  clank.start(now);
-  clank.stop(now + 0.22);
-
-  // Final thud when it locks open
-  const thud = ctx.createOscillator();
-  thud.type = "sine";
-  thud.frequency.setValueAtTime(90, now + dur - 0.05);
-  thud.frequency.exponentialRampToValueAtTime(35, now + dur + 0.15);
-  const thudGain = ctx.createGain();
-  thudGain.gain.setValueAtTime(0.0001, now + dur - 0.05);
-  thudGain.gain.exponentialRampToValueAtTime(0.5, now + dur);
-  thudGain.gain.exponentialRampToValueAtTime(0.001, now + dur + 0.25);
-  thud.connect(thudGain).connect(ctx.destination);
-  thud.start(now + dur - 0.05);
-  thud.stop(now + dur + 0.3);
-
-  setTimeout(() => ctx.close(), (dur + 0.5) * 1000);
-}
 
 function Marigold({ delay = 0, size = 44 }: { delay?: number; size?: number }) {
   return (
@@ -200,7 +140,7 @@ function Toran() {
 function Index() {
   const [open, setOpen] = useState(false);
   const [reset, setReset] = useState(0);
-  const audioReady = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -217,18 +157,27 @@ function Index() {
   function trigger() {
     if (open) {
       // reset
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       setOpen(false);
       setReset((n) => n + 1);
       return;
     }
     try {
-      playShutterSound();
-      audioReady.current = true;
+      if (!audioRef.current) {
+        audioRef.current = new Audio(shutterSound.url);
+        audioRef.current.preload = "auto";
+      }
+      audioRef.current.currentTime = 0;
+      void audioRef.current.play();
     } catch {
       /* ignore */
     }
     setOpen(true);
   }
+
 
   return (
     <div
