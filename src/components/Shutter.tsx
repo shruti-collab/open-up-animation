@@ -34,20 +34,29 @@ function Leaf({ delay = 0 }: { delay?: number }) {
 
 /* ---------- Toran (garland) ---------- */
 function Toran() {
-  const items = Array.from({ length: 28 });
+  const [count, setCount] = useState(28);
+  useEffect(() => {
+    const update = () => setCount(window.innerWidth < 640 ? 14 : window.innerWidth < 1024 ? 20 : 28);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const items = Array.from({ length: count });
   return (
     <div className="toran-wrap pointer-events-none absolute inset-x-0 top-0 z-30">
-      <svg viewBox="0 0 1000 60" preserveAspectRatio="none" className="w-full h-[60px]">
+      <svg viewBox="0 0 1000 60" preserveAspectRatio="none" className="w-full h-[40px] sm:h-[60px]">
         <path d="M0 10 Q 250 55 500 20 T 1000 15" stroke="#78350f" strokeWidth="3" fill="none" />
       </svg>
-      <div className="absolute inset-x-0 top-2 flex justify-between px-2">
+      <div className="absolute inset-x-0 top-2 flex justify-between px-1 sm:px-2">
         {items.map((_, i) => {
           const isLeaf = i % 4 === 1 || i % 4 === 3;
           const delay = (i % 6) * 0.25;
-          const drop = 20 + Math.sin(i * 0.8) * 18;
+          const drop = 14 + Math.sin(i * 0.8) * 14;
+          const mSize = i % 2 === 0 ? 34 : 28;
+          const dSize = i % 2 === 0 ? 46 : 38;
           return (
-            <div key={i} className="flex flex-col items-center" style={{ transform: `translateY(${drop}px)` }}>
-              {isLeaf ? <Leaf delay={delay} /> : <Marigold delay={delay} size={i % 2 === 0 ? 46 : 38} />}
+            <div key={i} className="flex flex-col items-center shrink-0" style={{ transform: `translateY(${drop}px)` }}>
+              {isLeaf ? <Leaf delay={delay} /> : <Marigold delay={delay} size={typeof window !== "undefined" && window.innerWidth < 640 ? mSize : dSize} />}
             </div>
           );
         })}
@@ -103,27 +112,30 @@ export function Shutter() {
   return (
     <div
       key={reset}
-      className="relative h-screen w-screen overflow-hidden bg-black select-none cursor-pointer"
+      className="relative w-screen overflow-hidden bg-black select-none cursor-pointer touch-manipulation"
+      style={{ height: "100dvh" }}
       onClick={trigger}
+      onTouchEnd={(e) => { e.preventDefault(); trigger(); }}
       role="button"
       tabIndex={0}
       aria-label="Pull shutter up"
     >
       <img src={shutterDesign.url} alt="Chanchal Man dukaan design" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)]" />
-      <div className="absolute inset-x-0 top-0 z-20 h-[68px] shutter-housing" />
-      <div className={`shutter absolute inset-x-0 top-[68px] z-10 origin-top ${open ? "shutter-open" : ""}`}>
+      <div className="absolute inset-x-0 top-0 z-20 h-[48px] sm:h-[68px] shutter-housing" />
+      <div className={`shutter absolute inset-x-0 z-10 origin-top top-[48px] sm:top-[68px] ${open ? "shutter-open" : ""}`}>
         <div className="shutter-metal h-full w-full" />
         <div className="shutter-handle" />
       </div>
       <Toran />
-      <div className={`pointer-events-none absolute inset-x-0 bottom-8 z-40 text-center text-sm tracking-[0.3em] text-amber-100/90 transition-opacity duration-500 ${open ? "opacity-0" : "opacity-100 animate-pulse"}`}>
+      <div className={`pointer-events-none absolute inset-x-0 bottom-6 sm:bottom-8 z-40 px-4 text-center text-[11px] sm:text-sm tracking-[0.25em] sm:tracking-[0.3em] text-amber-100/90 transition-opacity duration-500 ${open ? "opacity-0" : "opacity-100 animate-pulse"}`}>
         TAP · CLICK · SPACE — खोलिए
       </div>
       {open && (
         <button
           onClick={(e) => { e.stopPropagation(); setOpen(false); setReset((n) => n + 1); }}
-          className="absolute bottom-6 right-6 z-40 rounded-full border border-amber-100/40 bg-black/40 px-4 py-2 text-xs tracking-widest text-amber-100 backdrop-blur hover:bg-black/60"
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(false); setReset((n) => n + 1); }}
+          className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 rounded-full border border-amber-100/40 bg-black/40 px-4 py-3 text-xs tracking-widest text-amber-100 backdrop-blur hover:bg-black/60 active:bg-black/70 min-h-11 min-w-11"
         >
           CLOSE SHUTTER
         </button>
