@@ -169,7 +169,7 @@
 }
 
 .shutter {
-  height: calc(100vh - 68px);
+  height: calc(100dvh - 48px);
   transition:
     transform 1.7s cubic-bezier(0.7, 0.02, 0.3, 1),
     filter 1.7s cubic-bezier(0.7, 0.02, 0.3, 1),
@@ -177,6 +177,9 @@
   will-change: transform, filter;
   transform: scaleY(1);
   filter: blur(0);
+}
+@media (min-width: 640px) {
+  .shutter { height: calc(100dvh - 68px); }
 }
 
 .shutter-open {
