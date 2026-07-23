@@ -112,27 +112,30 @@ export function Shutter() {
   return (
     <div
       key={reset}
-      className="relative h-screen w-screen overflow-hidden bg-black select-none cursor-pointer"
+      className="relative w-screen overflow-hidden bg-black select-none cursor-pointer touch-manipulation"
+      style={{ height: "100dvh" }}
       onClick={trigger}
+      onTouchEnd={(e) => { e.preventDefault(); trigger(); }}
       role="button"
       tabIndex={0}
       aria-label="Pull shutter up"
     >
       <img src={shutterDesign.url} alt="Chanchal Man dukaan design" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)]" />
-      <div className="absolute inset-x-0 top-0 z-20 h-[68px] shutter-housing" />
-      <div className={`shutter absolute inset-x-0 top-[68px] z-10 origin-top ${open ? "shutter-open" : ""}`}>
+      <div className="absolute inset-x-0 top-0 z-20 h-[48px] sm:h-[68px] shutter-housing" />
+      <div className={`shutter absolute inset-x-0 z-10 origin-top top-[48px] sm:top-[68px] ${open ? "shutter-open" : ""}`}>
         <div className="shutter-metal h-full w-full" />
         <div className="shutter-handle" />
       </div>
       <Toran />
-      <div className={`pointer-events-none absolute inset-x-0 bottom-8 z-40 text-center text-sm tracking-[0.3em] text-amber-100/90 transition-opacity duration-500 ${open ? "opacity-0" : "opacity-100 animate-pulse"}`}>
+      <div className={`pointer-events-none absolute inset-x-0 bottom-6 sm:bottom-8 z-40 px-4 text-center text-[11px] sm:text-sm tracking-[0.25em] sm:tracking-[0.3em] text-amber-100/90 transition-opacity duration-500 ${open ? "opacity-0" : "opacity-100 animate-pulse"}`}>
         TAP · CLICK · SPACE — खोलिए
       </div>
       {open && (
         <button
           onClick={(e) => { e.stopPropagation(); setOpen(false); setReset((n) => n + 1); }}
-          className="absolute bottom-6 right-6 z-40 rounded-full border border-amber-100/40 bg-black/40 px-4 py-2 text-xs tracking-widest text-amber-100 backdrop-blur hover:bg-black/60"
+          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(false); setReset((n) => n + 1); }}
+          className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 rounded-full border border-amber-100/40 bg-black/40 px-4 py-3 text-xs tracking-widest text-amber-100 backdrop-blur hover:bg-black/60 active:bg-black/70 min-h-11 min-w-11"
         >
           CLOSE SHUTTER
         </button>
